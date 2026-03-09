@@ -43,7 +43,7 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showAddShee t = true
+                        showAddSheet = true
                     } label: {
                         Image(systemName: "plus")
                     }
