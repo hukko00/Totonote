@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var dueDate = Date()
     @State private var priority = 1
     @State private var showAddSheet = false
+    @State private var isCompleted = false
 
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -18,25 +19,53 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(todos) { todo in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(todo.title)
-                            .font(.headline)
-
-                        Text(todo.detailText)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        Text("優先度: \(todo.priority)")
-                            .font(.caption)
-
-                        Text("期日: \(todo.dueDate.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.caption)
-                            .foregroundStyle(.gray)
+                if todos.isEmpty{
+                    ContentUnavailableView(
+                                "保存がありません",
+                                systemImage: "pencil",
+                                description: Text("右上の＋ボタンからTodoを追加してください")
+                            )
+                } else {
+                    ForEach(todos) { todo in
+                        Button {
+                            todo.isCompleted.toggle()
+                            print("タップ: \(todo.title)")
+                        } label: {
+                            HStack{
+                                Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
+                                    .font(.title3)
+                                    .foregroundStyle(todo.isCompleted ? .green : .gray)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    
+                                    
+                                    Text(todo.title)
+                                        .font(.headline)
+                                    
+                                    if !todo.detailText.isEmpty {
+                                        Text(todo.detailText)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 4)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button("削除", role: .destructive) {
+                                deleteTodo(todo)
+                            }
+                            
+                            Button("編集") {
+                                print("編集: \(todo.title)")
+                            }
+                            .tint(.blue)
+                        }
                     }
-                    .padding(.vertical, 4)
+                    .onDelete(perform: deleteTodos)
                 }
-                .onDelete(perform: deleteTodos)
             }
             .navigationTitle("Totonote")
             .navigationBarTitleDisplayMode(.large)
@@ -124,7 +153,8 @@ struct ContentView: View {
             title: title,
             detailText: detailText,
             dueDate: dueDate,
-            priority: priority
+            priority: priority,
+            isCompleted: isCompleted
         )
 
         context.insert(newTodo)
@@ -137,6 +167,16 @@ struct ContentView: View {
             priority = 1
         } catch {
             print("保存エラー: \(error)")
+        }
+    }
+
+    private func deleteTodo(_ todo: TodoItem) {
+        context.delete(todo)
+
+        do {
+            try context.save()
+        } catch {
+            print("削除エラー: \(error)")
         }
     }
 
